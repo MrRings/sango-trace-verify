@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sango Trace — Verify a batch</title>
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --canvas: #F8F6F0; --surface: #fff; --border: #EBE6DC; --ink: #12231A; --muted: #4a524c;
+    --primary: #153826; --gold: #C8982C; --error: #BA1A1A; --amber: #B45309;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--canvas); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { background: linear-gradient(rgba(12,38,24,.72), rgba(12,38,24,.9)), var(--primary) url(baobab.jpg) center 35% / cover no-repeat; color: #fff; padding: 36px 16px 28px; display: flex; align-items: center; gap: 12px; }
+  header svg { flex: none; }
+  header strong { display: block; font-size: 20px; letter-spacing: .5px; }
+  header span { font-size: 13px; opacity: .75; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; display: grid; gap: 12px; }
+  .banner { border-radius: 20px; padding: 16px; color: #fff; display: flex; gap: 12px; align-items: center; background: var(--primary); }
+  .banner.bad { background: var(--error); }
+  .banner h2 { margin: 0; font-size: 18px; }
+  .banner p { margin: 2px 0 0; font-size: 14px; opacity: .85; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 16px; box-shadow: 0 4px 16px rgba(32,28,20,.05); }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+  h1 { margin: 2px 0 4px; font-size: 24px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .stats { display: flex; gap: 24px; margin: 12px 0; }
+  .stats b { display: block; font-size: 26px; }
+  .row { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+  .row span:last-child { font-weight: 500; color: var(--muted); font-size: 14px; }
+  code { font-size: 12px; word-break: break-all; }
+  h3 { margin: 8px 0 0; font-size: 17px; }
+  footer { max-width: 640px; margin: 0 auto; padding: 8px 16px 32px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <svg width="40" height="40" viewBox="0 0 100 100" aria-hidden="true">
+    <path d="M25.37 18.5 A40 40 0 1 0 74.63 18.5" stroke="#C8982C" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <path d="M34.44 34.44 A22 22 0 1 0 65.56 34.44" stroke="#fff" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <circle cx="50" cy="50" r="5" fill="#fff"/>
+  </svg>
+  <div><strong>sango trace</strong><span>Batch certificate verification</span></div>
+</header>
+<main id="out"><p class="muted">Checking certificate…</p></main>
+<footer>Harvesters are shown by ID code only. Locations are the GPS fix recorded at each weighing. Header image is illustrative.</footer>
+<script>
+  // Public project URL and publishable key: safe to expose, access is limited by the database function.
+  var SUPABASE_URL = "https://jlydcvmqragrngcvrmav.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_YTdGAkfEcA1Mzz_6ChHZhA_aZ_0e8bh";
+
+  var out = document.getElementById("out");
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function day(iso) { return String(iso).slice(0, 10); }
+  function show(node) { out.replaceChildren.apply(out, node); }
+
+  function render(c) {
+    var ok = c.hash_valid === true;
+    var banner = el("div", "banner" + (ok ? "" : " bad"));
+    var t = el("div");
+    t.append(el("h2", null, ok ? "Verified chain of custody" : "Seal does not match"),
+      el("p", null, ok ? "Every lot record matches the certificate seal." : "Records changed after certification. Do not rely on this batch."));
+    banner.append(t);
+
+    var main = el("div", "card");
+    main.append(el("div", "eyebrow", "BATCH"), el("h1", null, c.batch_code),
+      el("div", "muted", c.species.common_name + (c.species.botanical_name ? " · " + c.species.botanical_name : "")));
+    var stats = el("div", "stats");
+    var s1 = el("div"); s1.append(el("b", null, Number(c.total_net_kg).toFixed(1) + " kg"), el("span", "muted", "Net weight"));
+    var s2 = el("div"); s2.append(el("b", null, String(c.lot_count)), el("span", "muted", "Lots"));
+    stats.append(s1, s2);
+    var window_ = day(c.first_harvest) + (day(c.first_harvest) !== day(c.last_harvest) ? " to " + day(c.last_harvest) : "");
+    main.append(stats, el("div", "muted", "Harvested " + window_ + " · " + (c.hub || "Hub") + " · Certified " + day(c.certified_at)));
+    var seal = el("div", "muted"); seal.append("Seal "); seal.append(el("code", null, c.certificate_hash)); main.append(seal);
+
+    var nodes = [banner, main];
+    var labels = { batch_created: "Batch created", qc_passed: "Quality checks passed", certified: "Certified", dispatched: "Dispatched", in_transit: "In transit", received: "Received" };
+    if (c.custody && c.custody.length) {
+      var hist = el("div", "card"); hist.append(el("h3", null, "Hand-off history"));
+      c.custody.forEach(function (e) {
+        var r = el("div", "row");
+        r.append(el("span", null, labels[e.event_type] || e.event_type), el("span", null, day(e.occurred_at) + (e.location ? " · " + e.location : "")));
+        hist.append(r);
+      });
+      nodes.push(hist);
+    }
+    nodes.push(el("h3", null, "Harvest origin points"));
+    c.lots.forEach(function (l) {
+      var card = el("div", "card");
+      var row = el("div", "row"); row.append(el("span", null, l.lot_code), el("span", null, "Grade " + l.grade + " · " + Number(l.net_kg).toFixed(1) + " kg"));
+      var PARTS = { pulp: "Fruit pulp", seed: "Seed or kernel", leaf: "Leaf", whole_fruit: "Whole fruit", root_rhizome: "Root or rhizome" };
+      card.append(row);
+      if (l.plant_part || l.collection_area) {
+        card.append(el("div", "muted", (PARTS[l.plant_part] || "") + (l.plant_part && l.collection_area ? " · " : "") + (l.collection_area || "")));
+      }
+      if (l.out_of_season) card.append(el("div", "muted", "Recorded outside the usual harvest season"));
+      card.append(
+        el("div", "muted", "GPS " + Number(l.lat).toFixed(5) + ", " + Number(l.lng).toFixed(5) + (l.accuracy_m != null ? " (±" + Number(l.accuracy_m).toFixed(1) + " m)" : "")),
+        el("div", "muted", "Harvester " + l.harvester_code + " · " + day(l.captured_at)));
+      nodes.push(card);
+    });
+    show(nodes);
+  }
+
+  function message(text) { var c = el("div", "card"); c.append(el("p", null, text)); show([c]); }
+
+  var token = new URLSearchParams(location.search).get("t");
+  if (!token || !/^[a-f0-9]{32}$/i.test(token)) {
+    message("This link is missing a certificate code. Scan the QR on the batch again.");
+  } else {
+    fetch(SUPABASE_URL + "/rest/v1/rpc/public_certificate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
+      body: JSON.stringify({ p_token: token.toLowerCase() })
+    }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); })
+      .then(function (c) { c ? render(c) : message("No certified batch matches this code. It may be wrong or not yet certified."); })
+      .catch(function () { message("Could not check the certificate. Check your connection and try again."); });
+  }
+</script>
+</body>
+</html>

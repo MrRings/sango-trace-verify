@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sango Trace</title>
+<meta name="description" content="Wild-harvest traceability, starting with baobab in Gwanda, Zimbabwe.">
+<style>
+  :root { --canvas:#F8F6F0; --surface:#fff; --border:#EBE6DC; --ink:#12231A; --muted:#4a524c; --primary:#153826; --gold:#C8982C; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--canvas); color:var(--ink); font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { background:linear-gradient(rgba(12,38,24,.72),rgba(12,38,24,.92)),var(--primary) url(verify/baobab.jpg) center 35%/cover no-repeat; color:#fff; padding:56px 16px 44px; text-align:center; }
+  header svg { display:block; margin:0 auto 12px; }
+  header h1 { margin:0; font-size:34px; letter-spacing:.5px; }
+  header p { margin:8px auto 0; max-width:30em; opacity:.85; }
+  main { max-width:640px; margin:0 auto; padding:16px; display:grid; gap:12px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:18px; box-shadow:0 4px 16px rgba(32,28,20,.05); }
+  h2 { margin:0 0 6px; font-size:19px; color:var(--primary); }
+  p { margin:0; color:var(--muted); }
+  footer { max-width:640px; margin:0 auto; padding:8px 16px 32px; color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <svg width="64" height="64" viewBox="0 0 100 100" aria-hidden="true">
+    <path d="M25.37 18.5 A40 40 0 1 0 74.63 18.5" stroke="#C8982C" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <path d="M34.44 34.44 A22 22 0 1 0 65.56 34.44" stroke="#fff" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <circle cx="50" cy="50" r="5" fill="#fff"/>
+  </svg>
+  <h1>sango trace</h1>
+  <p>Wild-harvest traceability, starting with baobab in Gwanda, Zimbabwe.</p>
+</header>
+<main>
+  <div class="card">
+    <h2>Scanned a QR code on a batch?</h2>
+    <p>Scan it again with your phone camera. It opens the certificate for that batch: where it was harvested, when, the quality grade, and the hand-offs since. If you got here by typing the address, the certificate page needs the code from the QR.</p>
+  </div>
+  <div class="card">
+    <h2>What a certificate shows</h2>
+    <p>Weight and grade of every lot, a GPS point and date for each harvest, the part of the plant collected, and a seal that changes if any record is altered afterwards. Harvesters appear by ID code only.</p>
+  </div>
+  <div class="card">
+    <h2>About</h2>
+    <p>Sango Trace is built by Inala Africa Trust, Harare. The certificate is evidence of origin and handling. It is not a FairWild or organic certification.</p>
+  </div>
+</main>
+<footer>Header image is illustrative.</footer>
+</body>
+</html>
